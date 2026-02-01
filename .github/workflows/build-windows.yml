@@ -50,16 +50,18 @@ jobs:
 
       - name: Verify build
         run: |
-          echo "--- Checking dist directory ---"
+          echo "--- Dist top-level ---"
           ls -la dist/testcase_cluster_tool/
+          echo "--- _internal contents ---"
+          ls dist/testcase_cluster_tool/_internal/ | head -30
           echo "--- Checking exe ---"
           test -f dist/testcase_cluster_tool/testcase_cluster_tool.exe && echo "exe OK" || (echo "exe MISSING" && exit 1)
           echo "--- Checking model ---"
           test -d dist/testcase_cluster_tool/models/text2vec-base-chinese && echo "model OK" || (echo "model MISSING" && exit 1)
-          echo "--- Checking templates ---"
-          test -d dist/testcase_cluster_tool/app/templates && echo "templates OK" || (echo "templates MISSING" && exit 1)
-          echo "--- Checking static ---"
-          test -d dist/testcase_cluster_tool/static && echo "static OK" || (echo "static MISSING" && exit 1)
+          echo "--- Checking templates (in _internal) ---"
+          test -d dist/testcase_cluster_tool/_internal/app/templates && echo "templates OK" || (echo "templates MISSING" && exit 1)
+          echo "--- Checking static (in _internal) ---"
+          test -d dist/testcase_cluster_tool/_internal/static && echo "static OK" || (echo "static MISSING" && exit 1)
         shell: bash
 
       - name: Create ZIP archive

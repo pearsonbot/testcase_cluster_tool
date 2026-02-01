@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 from flask import Flask, jsonify
 
@@ -10,11 +11,25 @@ from app.routes import register_blueprints
 logger = logging.getLogger(__name__)
 
 
+def _get_resource_path(relative_path):
+    """Get path to bundled resource, works for dev and PyInstaller."""
+    if getattr(sys, 'frozen', False):
+        # PyInstaller puts data files in _internal/ (PyInstaller 6+)
+        base = sys._MEIPASS
+    else:
+        base = os.path.dirname(os.path.abspath(__file__))
+        base = os.path.dirname(base)  # project root
+    return os.path.join(base, relative_path)
+
+
 def create_app(config_override=None):
+    template_dir = _get_resource_path(os.path.join('app', 'templates'))
+    static_dir = _get_resource_path('static')
+
     app = Flask(
         __name__,
-        template_folder='templates',
-        static_folder=os.path.join(Config.BASE_DIR, 'static'),
+        template_folder=template_dir,
+        static_folder=static_dir,
         static_url_path='/static'
     )
 
