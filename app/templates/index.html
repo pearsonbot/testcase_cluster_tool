@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Import Section -->
+<div class="card mb-3">
+    <div class="card-header"><i class="bi bi-upload"></i> Data Import</div>
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <input type="file" id="xlsx-file" class="form-control" accept=".xlsx">
+            </div>
+            <div class="col-auto">
+                <button id="btn-upload" class="btn btn-primary" onclick="uploadFile()">
+                    <i class="bi bi-cloud-upload"></i> Import xlsx
+                </button>
+            </div>
+            <div class="col">
+                <span id="import-status" class="text-muted">Loading status...</span>
+            </div>
+        </div>
+        <div id="import-progress" class="mt-2 d-none">
+            <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+            </div>
+            <small class="text-muted">Importing...</small>
+        </div>
+        <div id="import-result" class="mt-2 d-none"></div>
+
+        <!-- Column Mapping Modal -->
+        <div id="column-mapping" class="mt-3 d-none">
+            <h6>Column Mapping Confirmation</h6>
+            <div id="mapping-content"></div>
+            <button class="btn btn-success mt-2" onclick="confirmImport()">
+                <i class="bi bi-check-lg"></i> Confirm Import
+            </button>
+            <button class="btn btn-secondary mt-2" onclick="cancelImport()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Clustering Section -->
+<div class="card mb-3">
+    <div class="card-header"><i class="bi bi-diagram-3"></i> Clustering</div>
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <label class="form-label mb-0">Model:</label>
+            </div>
+            <div class="col-auto">
+                <span id="model-name" class="badge bg-info">Loading...</span>
+            </div>
+            <div class="col-auto">
+                <label for="threshold-slider" class="form-label mb-0">Similarity Threshold:</label>
+            </div>
+            <div class="col-3">
+                <input type="range" class="form-range" id="threshold-slider"
+                       min="0.50" max="0.95" step="0.01" value="0.80"
+                       oninput="document.getElementById('threshold-value').textContent = this.value">
+            </div>
+            <div class="col-auto">
+                <span id="threshold-value" class="badge bg-secondary">0.80</span>
+            </div>
+            <div class="col-auto">
+                <button id="btn-cluster" class="btn btn-warning" onclick="runClustering()">
+                    <i class="bi bi-play-fill"></i> Run Clustering
+                </button>
+            </div>
+        </div>
+        <div id="cluster-status" class="mt-2">
+            <span class="text-muted">Clustering status: not yet run</span>
+        </div>
+        <div id="cluster-progress" class="mt-2 d-none">
+            <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" style="width: 100%"></div>
+            </div>
+            <small id="cluster-progress-text" class="text-muted"></small>
+        </div>
+    </div>
+</div>
+
+<!-- Search Section -->
+<div class="card mb-3">
+    <div class="card-header"><i class="bi bi-search"></i> Search Test Cases</div>
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-5">
+                <input type="text" id="search-input" class="form-control" placeholder="Search keyword..."
+                       onkeydown="if(event.key==='Enter') searchCases()">
+            </div>
+            <div class="col-auto">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="search-mode" id="mode-title" value="title" checked>
+                    <label class="form-check-label" for="mode-title">By Title</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="search-mode" id="mode-id" value="id">
+                    <label class="form-check-label" for="mode-id">By ID</label>
+                </div>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" onclick="searchCases()">
+                    <i class="bi bi-search"></i> Search
+                </button>
+            </div>
+        </div>
+
+        <!-- Column Selector -->
+        <div id="column-selector" class="mt-2 d-none">
+            <small class="text-muted">Extra columns: </small>
+            <span id="extra-columns-checkboxes"></span>
+        </div>
+    </div>
+</div>
+
+<!-- Results Section -->
+<div id="search-results" class="d-none">
+    <!-- Case List -->
+    <div id="case-list-section" class="card mb-3 d-none">
+        <div class="card-header"><i class="bi bi-list"></i> Search Results (<span id="result-count">0</span>)</div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm" id="case-list-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Steps</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="case-list-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Case Detail -->
+    <div id="case-detail-section" class="card mb-3 d-none">
+        <div class="card-header">
+            <i class="bi bi-file-earmark-text"></i> Case Detail
+            <button class="btn btn-sm btn-outline-secondary float-end" onclick="hideCaseDetail()">Close</button>
+        </div>
+        <div class="card-body" id="case-detail-content"></div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="mb-3">
+    <a href="/clusters" class="btn btn-outline-primary">
+        <i class="bi bi-collection"></i> View All Clusters
+    </a>
+    <button class="btn btn-outline-success" onclick="exportResults()">
+        <i class="bi bi-download"></i> Export Clustering Results
+    </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/import.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cluster.js') }}"></script>
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+<script src="{{ url_for('static', filename='js/export.js') }}"></script>
+<script>
+    // Load initial status on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        loadImportStatus();
+        loadClusterStatus();
+        loadModelInfo();
+        loadExtraColumns();
+
+        // Handle ?case=XXX URL parameter (from cluster detail page)
+        const params = new URLSearchParams(window.location.search);
+        const caseId = params.get('case');
+        if (caseId) {
+            loadCaseDetail(caseId);
+        }
+    });
+</script>
+{% endblock %}

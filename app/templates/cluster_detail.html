@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Cluster Detail - 测试用例步骤聚类分析工具{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/clusters">Clusters</a></li>
+        <li class="breadcrumb-item active" id="breadcrumb-label">Cluster #{{ cluster_id }}</li>
+    </ol>
+</nav>
+
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-collection"></i>
+        <span id="detail-header">Cluster #{{ cluster_id }}</span>
+    </div>
+    <div class="card-body">
+        <div id="cluster-info" class="mb-3">
+            <span class="text-muted">Loading...</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-sm">
+                <thead>
+                    <tr>
+                        <th>Step Operation</th>
+                        <th>Case ID</th>
+                        <th>Case Title</th>
+                        <th>Step #</th>
+                    </tr>
+                </thead>
+                <tbody id="detail-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/cluster_detail.js') }}"></script>
+<script>
+    const CLUSTER_ID = {{ cluster_id }};
+    document.addEventListener('DOMContentLoaded', () => loadClusterDetail(CLUSTER_ID));
+</script>
+{% endblock %}

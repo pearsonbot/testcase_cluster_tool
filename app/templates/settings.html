@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - 测试用例步骤聚类分析工具{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><i class="bi bi-gear"></i> Model Settings</div>
+    <div class="card-body">
+        <div class="mb-4">
+            <h6>Embedding Model Source</h6>
+
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="model_type" id="model-builtin"
+                       value="builtin" checked onchange="toggleModelFields()">
+                <label class="form-check-label" for="model-builtin">
+                    Built-in Offline Model (text2vec-base-chinese)
+                </label>
+            </div>
+
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="model_type" id="model-local"
+                       value="local" onchange="toggleModelFields()">
+                <label class="form-check-label" for="model-local">
+                    Custom Local Model
+                </label>
+            </div>
+            <div id="local-fields" class="ms-4 mb-3 d-none">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <input type="text" class="form-control" id="model-path"
+                               placeholder="Path to local model directory">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="model_type" id="model-api"
+                       value="api" onchange="toggleModelFields()">
+                <label class="form-check-label" for="model-api">
+                    Online API (OpenAI-compatible)
+                </label>
+            </div>
+            <div id="api-fields" class="ms-4 mb-3 d-none">
+                <div class="mb-2">
+                    <label class="form-label">API URL</label>
+                    <input type="text" class="form-control" id="api-url"
+                           placeholder="https://api.openai.com/v1">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">API Key</label>
+                    <input type="password" class="form-control" id="api-key"
+                           placeholder="sk-...">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Model Name</label>
+                    <input type="text" class="form-control" id="api-model-name"
+                           placeholder="text-embedding-3-small">
+                </div>
+            </div>
+
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="model_type" id="model-tfidf"
+                       value="tfidf" onchange="toggleModelFields()">
+                <label class="form-check-label" for="model-tfidf">
+                    TF-IDF Lightweight Mode <span class="badge bg-warning text-dark">Test Only</span>
+                    <br><small class="text-muted">Character n-gram based, no neural model needed. For testing clustering pipeline only.</small>
+                </label>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary" onclick="testModel()">
+                <i class="bi bi-lightning"></i> Test Connection
+            </button>
+            <button class="btn btn-primary" onclick="saveSettings()">
+                <i class="bi bi-check-lg"></i> Save Settings
+            </button>
+        </div>
+
+        <div id="test-result" class="mt-3 d-none"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', loadSettings);
+</script>
+{% endblock %}
