@@ -6,7 +6,7 @@ on:
       release_tag:
         description: 'Release tag (e.g. v1.1.0)'
         required: true
-        default: 'v1.1.0'
+        default: 'v2.1.0'
 
 permissions:
   contents: write
@@ -34,15 +34,15 @@ jobs:
           pip install pyinstaller
         shell: bash
 
-      - name: Download text2vec-base-chinese model
+      - name: Download bge-large-zh-v1.5 model
         run: |
           python -c "
           from sentence_transformers import SentenceTransformer
           import os
-          print('Downloading text2vec-base-chinese...')
-          model = SentenceTransformer('shibing624/text2vec-base-chinese')
+          print('Downloading bge-large-zh-v1.5...')
+          model = SentenceTransformer('BAAI/bge-large-zh-v1.5')
           os.makedirs('models', exist_ok=True)
-          model.save('models/text2vec-base-chinese')
+          model.save('models/bge-large-zh-v1.5')
           print('Model downloaded successfully')
           "
         shell: bash
@@ -60,7 +60,7 @@ jobs:
           echo "--- Checking exe ---"
           test -f dist/testcase_cluster_tool/testcase_cluster_tool.exe && echo "exe OK" || (echo "exe MISSING" && exit 1)
           echo "--- Checking model ---"
-          test -d dist/testcase_cluster_tool/models/text2vec-base-chinese && echo "model OK" || (echo "model MISSING" && exit 1)
+          test -d dist/testcase_cluster_tool/models/bge-large-zh-v1.5 && echo "model OK" || (echo "model MISSING" && exit 1)
           echo "--- Checking templates (in _internal) ---"
           test -d dist/testcase_cluster_tool/_internal/app/templates && echo "templates OK" || (echo "templates MISSING" && exit 1)
           echo "--- Checking static (in _internal) ---"
@@ -85,7 +85,7 @@ jobs:
         run: |
           gh release create "${{ github.event.inputs.release_tag }}" \
             "dist/testcase_cluster_tool_windows.zip" \
-            --title "${{ github.event.inputs.release_tag }} - Windows Release (with text2vec model)" \
+            --title "${{ github.event.inputs.release_tag }} - Windows Release (with bge-large-zh-v1.5)" \
             --notes-file RELEASE_NOTES.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

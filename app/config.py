@@ -14,7 +14,7 @@ class Config:
 
     DATABASE_PATH = os.path.join(BASE_DIR, "data", "testcase.db")
     LOG_DIR = os.path.join(BASE_DIR, "log")
-    BUILTIN_MODEL_PATH = os.path.join(BASE_DIR, "models", "text2vec-base-chinese")
+    BUILTIN_MODEL_PATH = os.path.join(BASE_DIR, "models", "bge-large-zh-v1.5")
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "data", "uploads")
 
     DEFAULT_SIMILARITY_THRESHOLD = 0.80

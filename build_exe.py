@@ -14,11 +14,11 @@ def main():
     print("=" * 60)
 
     # Download model if not present
-    model_path = os.path.join(project_root, "models", "text2vec-base-chinese")
+    model_path = os.path.join(project_root, "models", "bge-large-zh-v1.5")
     if not os.path.isdir(model_path):
-        print("\nDownloading text2vec-base-chinese model...")
+        print("\nDownloading bge-large-zh-v1.5 model...")
         from sentence_transformers import SentenceTransformer
-        model = SentenceTransformer("shibing624/text2vec-base-chinese")
+        model = SentenceTransformer("BAAI/bge-large-zh-v1.5")
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
         model.save(model_path)
         print(f"Model saved to {model_path}")
@@ -56,7 +56,7 @@ def main():
 
     # Post-build: copy model and create directories
     dist_dir = os.path.join(project_root, "dist", "testcase_cluster_tool")
-    dest_model = os.path.join(dist_dir, "models", "text2vec-base-chinese")
+    dest_model = os.path.join(dist_dir, "models", "bge-large-zh-v1.5")
 
     if not os.path.isdir(dest_model):
         print(f"\nCopying model to {dest_model}...")

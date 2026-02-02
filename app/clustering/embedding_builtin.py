@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class BuiltinEmbeddingModel(BaseEmbeddingModel):
-    """Loads text2vec-base-chinese from the bundled models/ directory."""
+    """Loads bge-large-zh-v1.5 from the bundled models/ directory."""
 
     def __init__(self, model_path):
         self._model_path = model_path
@@ -74,4 +74,4 @@ class BuiltinEmbeddingModel(BaseEmbeddingModel):
 
     @property
     def model_name(self):
-        return "text2vec-base-chinese (built-in)"
+        return "bge-large-zh-v1.5 (built-in)"
