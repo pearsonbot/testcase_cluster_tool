@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}聚类历史 - 测试用例步骤聚类分析工具{% endblock %}
+
+{% block content %}
+<div class="card mb-3">
+    <div class="card-header">
+        <i class="bi bi-clock-history"></i> 聚类历史记录
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped" id="history-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" onclick="toggleHistorySelectAll(this)"></th>
+                        <th>#</th>
+                        <th>执行时间</th>
+                        <th>模型</th>
+                        <th>阈值</th>
+                        <th>簇数</th>
+                        <th>噪声步骤</th>
+                        <th>总步骤</th>
+                        <th>耗时</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body">
+                </tbody>
+            </table>
+        </div>
+        <div id="no-history" class="text-center text-muted py-4 d-none">
+            暂无聚类历史记录。
+        </div>
+        <button class="btn btn-sm btn-outline-info mt-2" id="compare-btn" onclick="compareSelected()" disabled>
+            <i class="bi bi-arrow-left-right"></i> 对比选中的两条记录
+        </button>
+    </div>
+</div>
+
+<!-- Comparison result panel -->
+<div class="card d-none" id="compare-card">
+    <div class="card-header">
+        <i class="bi bi-arrow-left-right"></i> 聚类对比结果
+        <button type="button" class="btn-close float-end" onclick="document.getElementById('compare-card').classList.add('d-none')"></button>
+    </div>
+    <div class="card-body" id="compare-content">
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', loadHistory);
+</script>
+{% endblock %}

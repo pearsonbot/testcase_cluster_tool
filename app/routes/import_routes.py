@@ -22,11 +22,11 @@ _upload_session = {}
 def upload_xlsx():
     """Receive xlsx file, detect column mapping, return for confirmation."""
     if 'file' not in request.files:
-        return jsonify({"success": False, "error": "No file provided"}), 400
+        return jsonify({"success": False, "error": "未提供文件"}), 400
 
     file = request.files['file']
     if not file.filename or not file.filename.endswith('.xlsx'):
-        return jsonify({"success": False, "error": "Please upload an xlsx file"}), 400
+        return jsonify({"success": False, "error": "请上传 xlsx 格式文件"}), 400
 
     upload_dir = current_app.config.get('UPLOAD_FOLDER', tempfile.gettempdir())
     os.makedirs(upload_dir, exist_ok=True)
@@ -63,7 +63,7 @@ def upload_xlsx():
 def confirm_import():
     """Execute import with confirmed column mapping."""
     if 'filepath' not in _upload_session:
-        return jsonify({"success": False, "error": "No file uploaded. Please upload first."}), 400
+        return jsonify({"success": False, "error": "未上传文件，请先上传"}), 400
 
     data = request.get_json() or {}
     mapping = data.get('mapping', _upload_session.get('mapping', {}))
@@ -109,9 +109,9 @@ def confirm_import():
                 )
                 steps_imported += 1
 
-        # Clear stale cluster results
-        db.execute("DELETE FROM cluster_results")
-        db.execute("DELETE FROM cluster_info")
+        # Clear stale cluster results (without history)
+        db.execute("DELETE FROM cluster_results WHERE history_id IS NULL")
+        db.execute("DELETE FROM cluster_info WHERE history_id IS NULL")
         db.commit()
 
         logger.info("Import completed: %s, cases=%d, steps=%d", filename, cases_imported, steps_imported)
@@ -152,3 +152,56 @@ def import_status():
     except Exception as e:
         logger.error("Failed to get import status: %s", e, exc_info=True)
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@bp.route('/sources', methods=['GET'])
+def list_sources():
+    """Return all imported source files with case counts."""
+    try:
+        db = get_db()
+        rows = db.execute(
+            "SELECT source_file as filename, COUNT(*) as case_count "
+            "FROM test_cases WHERE source_file IS NOT NULL "
+            "GROUP BY source_file ORDER BY source_file"
+        ).fetchall()
+
+        sources = [{"filename": r['filename'], "case_count": r['case_count']} for r in rows]
+        return jsonify({"success": True, "sources": sources})
+    except Exception as e:
+        logger.error("Failed to list sources: %s", e, exc_info=True)
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@bp.route('/by-source/<path:filename>', methods=['DELETE'])
+def delete_by_source(filename):
+    """Delete all cases imported from a specific source file."""
+    db = get_db()
+
+    # Get all case IDs for this source
+    case_rows = db.execute(
+        "SELECT id FROM test_cases WHERE source_file = ?", (filename,)
+    ).fetchall()
+
+    if not case_rows:
+        return jsonify({"success": False, "error": f"未找到来源文件: {filename}"}), 404
+
+    case_ids = [r['id'] for r in case_rows]
+    total_steps = 0
+
+    for case_id in case_ids:
+        step_ids = [r['id'] for r in db.execute("SELECT id FROM test_steps WHERE case_id = ?", (case_id,)).fetchall()]
+        if step_ids:
+            placeholders = ','.join('?' * len(step_ids))
+            db.execute(f"DELETE FROM cluster_results WHERE step_id IN ({placeholders})", step_ids)
+        db.execute("DELETE FROM test_steps WHERE case_id = ?", (case_id,))
+        total_steps += len(step_ids)
+
+    db.execute("DELETE FROM test_cases WHERE source_file = ?", (filename,))
+    db.commit()
+
+    logger.info("Deleted %d cases from source %s", len(case_ids), filename)
+    return jsonify({
+        "success": True,
+        "deleted_cases": len(case_ids),
+        "deleted_steps": total_steps
+    })

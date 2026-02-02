@@ -18,8 +18,14 @@
                 <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
                     <i class="bi bi-house"></i> 首页
                 </a>
+                <a class="nav-link {% if request.path == '/browse' %}active{% endif %}" href="/browse">
+                    <i class="bi bi-table"></i> 数据浏览
+                </a>
                 <a class="nav-link {% if request.path == '/clusters' %}active{% endif %}" href="/clusters">
                     <i class="bi bi-collection"></i> 聚类总览
+                </a>
+                <a class="nav-link {% if request.path == '/history' %}active{% endif %}" href="/history">
+                    <i class="bi bi-clock-history"></i> 聚类历史
                 </a>
                 <a class="nav-link {% if request.path == '/settings' %}active{% endif %}" href="/settings">
                     <i class="bi bi-gear"></i> 设置
@@ -60,7 +66,7 @@
                 return data;
             } catch (e) {
                 if (e.message === 'Failed to fetch') {
-                    throw new Error('Cannot connect to server');
+                    throw new Error('无法连接服务器');
                 }
                 throw e;
             }

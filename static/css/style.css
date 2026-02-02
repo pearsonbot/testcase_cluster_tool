@@ -55,3 +55,34 @@ code {
     padding-left: 10px;
     margin-bottom: 8px;
 }
+
+/* Sortable table headers */
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+th.sortable:hover {
+    background-color: #e9ecef;
+}
+
+/* Browse step preview */
+.browse-steps-preview {
+    font-size: 12px;
+    border-left: 2px solid #dee2e6;
+    padding-left: 8px;
+}
+
+.browse-title {
+    color: #0d6efd;
+}
+
+.browse-title:hover {
+    text-decoration: underline;
+}
+
+/* Progress bar text */
+.progress-bar {
+    font-size: 12px;
+    line-height: 20px;
+}

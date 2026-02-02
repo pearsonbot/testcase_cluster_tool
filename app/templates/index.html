@@ -3,7 +3,7 @@
 {% block content %}
 <!-- Import Section -->
 <div class="card mb-3">
-    <div class="card-header"><i class="bi bi-upload"></i> Data Import</div>
+    <div class="card-header"><i class="bi bi-upload"></i> 数据导入</div>
     <div class="card-body">
         <div class="row align-items-center">
             <div class="col-auto">
@@ -11,46 +11,66 @@
             </div>
             <div class="col-auto">
                 <button id="btn-upload" class="btn btn-primary" onclick="uploadFile()">
-                    <i class="bi bi-cloud-upload"></i> Import xlsx
+                    <i class="bi bi-cloud-upload"></i> 导入 xlsx 文件
                 </button>
             </div>
             <div class="col">
-                <span id="import-status" class="text-muted">Loading status...</span>
+                <span id="import-status" class="text-muted">加载中...</span>
             </div>
         </div>
         <div id="import-progress" class="mt-2 d-none">
             <div class="progress">
                 <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
             </div>
-            <small class="text-muted">Importing...</small>
+            <small class="text-muted">导入中...</small>
         </div>
         <div id="import-result" class="mt-2 d-none"></div>
 
         <!-- Column Mapping Modal -->
         <div id="column-mapping" class="mt-3 d-none">
-            <h6>Column Mapping Confirmation</h6>
+            <h6>列映射确认</h6>
             <div id="mapping-content"></div>
             <button class="btn btn-success mt-2" onclick="confirmImport()">
-                <i class="bi bi-check-lg"></i> Confirm Import
+                <i class="bi bi-check-lg"></i> 确认导入
             </button>
-            <button class="btn btn-secondary mt-2" onclick="cancelImport()">Cancel</button>
+            <button class="btn btn-secondary mt-2" onclick="cancelImport()">取消</button>
         </div>
+    </div>
+</div>
+
+<!-- Data Management Section -->
+<div class="card mb-3">
+    <div class="card-header"><i class="bi bi-database"></i> 数据管理</div>
+    <div class="card-body">
+        <div id="data-stats" class="mb-3">
+            <span class="text-muted">加载中...</span>
+        </div>
+        <div id="source-file-list" class="mb-3 d-none">
+            <h6>按来源文件删除:</h6>
+            <div id="source-files-container"></div>
+            <button class="btn btn-sm btn-outline-danger mt-2" onclick="deleteBySource()">
+                <i class="bi bi-trash"></i> 删除选中文件的数据
+            </button>
+        </div>
+        <button class="btn btn-danger" onclick="clearAllData()">
+            <i class="bi bi-trash3"></i> 清空全部数据
+        </button>
     </div>
 </div>
 
 <!-- Clustering Section -->
 <div class="card mb-3">
-    <div class="card-header"><i class="bi bi-diagram-3"></i> Clustering</div>
+    <div class="card-header"><i class="bi bi-diagram-3"></i> 聚类分析</div>
     <div class="card-body">
         <div class="row align-items-center">
             <div class="col-auto">
-                <label class="form-label mb-0">Model:</label>
+                <label class="form-label mb-0">模型:</label>
             </div>
             <div class="col-auto">
-                <span id="model-name" class="badge bg-info">Loading...</span>
+                <span id="model-name" class="badge bg-info">加载中...</span>
             </div>
             <div class="col-auto">
-                <label for="threshold-slider" class="form-label mb-0">Similarity Threshold:</label>
+                <label for="threshold-slider" class="form-label mb-0">相似度阈值:</label>
             </div>
             <div class="col-3">
                 <input type="range" class="form-range" id="threshold-slider"
@@ -62,51 +82,89 @@
             </div>
             <div class="col-auto">
                 <button id="btn-cluster" class="btn btn-warning" onclick="runClustering()">
-                    <i class="bi bi-play-fill"></i> Run Clustering
+                    <i class="bi bi-play-fill"></i> 执行聚类
                 </button>
             </div>
         </div>
         <div id="cluster-status" class="mt-2">
-            <span class="text-muted">Clustering status: not yet run</span>
+            <span class="text-muted">聚类状态: 未执行</span>
         </div>
         <div id="cluster-progress" class="mt-2 d-none">
-            <div class="progress">
-                <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" style="width: 100%"></div>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <small id="cluster-phase-text" class="text-muted fw-bold"></small>
+                <small id="cluster-elapsed" class="text-muted"></small>
+            </div>
+            <div class="progress" style="height: 20px;">
+                <div id="cluster-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-warning"
+                     role="progressbar" style="width: 0%">0%</div>
             </div>
             <small id="cluster-progress-text" class="text-muted"></small>
         </div>
     </div>
 </div>
 
+<!-- Cluster Results Panel (shown after clustering) -->
+<div id="cluster-results-panel" class="card mb-3 d-none">
+    <div class="card-header">
+        <i class="bi bi-bar-chart"></i> 聚类结果
+        <span id="cluster-result-date" class="float-end text-muted"></span>
+    </div>
+    <div class="card-body">
+        <div id="cluster-result-summary" class="mb-3"></div>
+        <h6>TOP 10 聚类簇:</h6>
+        <div class="table-responsive">
+            <table class="table table-hover table-sm">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>簇标签</th>
+                        <th>步骤数</th>
+                        <th>用例数</th>
+                    </tr>
+                </thead>
+                <tbody id="cluster-top10-body"></tbody>
+            </table>
+        </div>
+        <div class="mt-2">
+            <a href="/clusters" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-collection"></i> 查看完整聚类总览
+            </a>
+            <a href="/history" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-clock-history"></i> 查看历史记录
+            </a>
+        </div>
+    </div>
+</div>
+
 <!-- Search Section -->
 <div class="card mb-3">
-    <div class="card-header"><i class="bi bi-search"></i> Search Test Cases</div>
+    <div class="card-header"><i class="bi bi-search"></i> 搜索测试用例</div>
     <div class="card-body">
         <div class="row align-items-center">
             <div class="col-md-5">
-                <input type="text" id="search-input" class="form-control" placeholder="Search keyword..."
+                <input type="text" id="search-input" class="form-control" placeholder="搜索关键词..."
                        onkeydown="if(event.key==='Enter') searchCases()">
             </div>
             <div class="col-auto">
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" name="search-mode" id="mode-title" value="title" checked>
-                    <label class="form-check-label" for="mode-title">By Title</label>
+                    <label class="form-check-label" for="mode-title">按标题</label>
                 </div>
                 <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" name="search-mode" id="mode-id" value="id">
-                    <label class="form-check-label" for="mode-id">By ID</label>
+                    <label class="form-check-label" for="mode-id">按编号</label>
                 </div>
             </div>
             <div class="col-auto">
                 <button class="btn btn-primary" onclick="searchCases()">
-                    <i class="bi bi-search"></i> Search
+                    <i class="bi bi-search"></i> 搜索
                 </button>
             </div>
         </div>
 
         <!-- Column Selector -->
         <div id="column-selector" class="mt-2 d-none">
-            <small class="text-muted">Extra columns: </small>
+            <small class="text-muted">附加列: </small>
             <span id="extra-columns-checkboxes"></span>
         </div>
     </div>
@@ -116,16 +174,22 @@
 <div id="search-results" class="d-none">
     <!-- Case List -->
     <div id="case-list-section" class="card mb-3 d-none">
-        <div class="card-header"><i class="bi bi-list"></i> Search Results (<span id="result-count">0</span>)</div>
+        <div class="card-header">
+            <i class="bi bi-list"></i> 搜索结果 (<span id="result-count">0</span>)
+            <button id="btn-batch-delete" class="btn btn-sm btn-outline-danger float-end d-none" onclick="batchDeleteCases()">
+                <i class="bi bi-trash"></i> 批量删除选中
+            </button>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover table-sm" id="case-list-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Title</th>
-                            <th>Steps</th>
-                            <th>Action</th>
+                            <th style="width:40px"><input type="checkbox" id="select-all-cases" onchange="toggleSelectAll(this)"></th>
+                            <th>标识</th>
+                            <th>标题</th>
+                            <th>步骤数</th>
+                            <th>操作</th>
                         </tr>
                     </thead>
                     <tbody id="case-list-body"></tbody>
@@ -137,8 +201,8 @@
     <!-- Case Detail -->
     <div id="case-detail-section" class="card mb-3 d-none">
         <div class="card-header">
-            <i class="bi bi-file-earmark-text"></i> Case Detail
-            <button class="btn btn-sm btn-outline-secondary float-end" onclick="hideCaseDetail()">Close</button>
+            <i class="bi bi-file-earmark-text"></i> 用例详情
+            <button class="btn btn-sm btn-outline-secondary float-end" onclick="hideCaseDetail()">关闭</button>
         </div>
         <div class="card-body" id="case-detail-content"></div>
     </div>
@@ -147,10 +211,10 @@
 <!-- Action Buttons -->
 <div class="mb-3">
     <a href="/clusters" class="btn btn-outline-primary">
-        <i class="bi bi-collection"></i> View All Clusters
+        <i class="bi bi-collection"></i> 查看聚类总览
     </a>
     <button class="btn btn-outline-success" onclick="exportResults()">
-        <i class="bi bi-download"></i> Export Clustering Results
+        <i class="bi bi-download"></i> 导出聚类结果
     </button>
 </div>
 {% endblock %}
@@ -167,6 +231,8 @@
         loadClusterStatus();
         loadModelInfo();
         loadExtraColumns();
+        loadSourceFiles();
+        loadClusterResultsPanel();
 
         // Handle ?case=XXX URL parameter (from cluster detail page)
         const params = new URLSearchParams(window.location.search);

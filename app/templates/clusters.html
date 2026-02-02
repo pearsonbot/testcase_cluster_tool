@@ -1,28 +1,28 @@
 {% extends "base.html" %}
 
-{% block title %}Cluster Overview - 测试用例步骤聚类分析工具{% endblock %}
+{% block title %}聚类总览 - 测试用例步骤聚类分析工具{% endblock %}
 
 {% block content %}
 <div class="card">
     <div class="card-header">
-        <i class="bi bi-collection"></i> Cluster Overview
+        <i class="bi bi-collection"></i> 聚类总览
         <button class="btn btn-sm btn-outline-success float-end" onclick="exportResults()">
-            <i class="bi bi-download"></i> Export
+            <i class="bi bi-download"></i> 导出
         </button>
     </div>
     <div class="card-body">
         <div id="cluster-summary" class="mb-3">
-            <span class="text-muted">Loading...</span>
+            <span class="text-muted">加载中...</span>
         </div>
         <div class="table-responsive">
             <table class="table table-hover table-striped" id="clusters-table">
                 <thead>
                     <tr>
-                        <th>Cluster ID</th>
-                        <th>Label</th>
-                        <th>Steps</th>
-                        <th>Cases</th>
-                        <th>Action</th>
+                        <th>簇编号</th>
+                        <th>簇标签</th>
+                        <th>步骤数</th>
+                        <th>用例数</th>
+                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody id="clusters-body">
@@ -30,7 +30,7 @@
             </table>
         </div>
         <div id="no-clusters" class="text-center text-muted py-4 d-none">
-            No clustering results yet. Please run clustering on the <a href="/">main page</a>.
+            暂无聚类结果，请在<a href="/">首页</a>执行聚类分析。
         </div>
     </div>
 </div>

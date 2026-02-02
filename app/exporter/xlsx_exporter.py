@@ -52,8 +52,9 @@ def _auto_width(ws):
 
 
 class XlsxExporter:
-    def __init__(self, db):
+    def __init__(self, db, history_id=None):
         self.db = db
+        self.history_id = history_id
 
     def export_overview(self):
         """Generate cluster overview xlsx. Returns bytes."""
@@ -65,10 +66,17 @@ class XlsxExporter:
         ws.append(headers)
         _style_header_row(ws, len(headers))
 
-        rows = self.db.execute(
-            "SELECT cluster_id, label, step_count, case_count "
-            "FROM cluster_info ORDER BY cluster_id"
-        ).fetchall()
+        if self.history_id is not None:
+            rows = self.db.execute(
+                "SELECT cluster_id, label, step_count, case_count "
+                "FROM cluster_info WHERE history_id = ? ORDER BY cluster_id",
+                (self.history_id,)
+            ).fetchall()
+        else:
+            rows = self.db.execute(
+                "SELECT cluster_id, label, step_count, case_count "
+                "FROM cluster_info ORDER BY cluster_id"
+            ).fetchall()
 
         for r in rows:
             ws.append([r['cluster_id'], r['label'], r['step_count'], r['case_count']])
@@ -84,13 +92,19 @@ class XlsxExporter:
         # Remove default sheet
         wb.remove(wb.active)
 
-        clusters = self.db.execute(
-            "SELECT cluster_id, label FROM cluster_info ORDER BY cluster_id"
-        ).fetchall()
+        if self.history_id is not None:
+            clusters = self.db.execute(
+                "SELECT cluster_id, label FROM cluster_info WHERE history_id = ? ORDER BY cluster_id",
+                (self.history_id,)
+            ).fetchall()
+        else:
+            clusters = self.db.execute(
+                "SELECT cluster_id, label FROM cluster_info ORDER BY cluster_id"
+            ).fetchall()
 
         if not clusters:
             ws = wb.create_sheet("无数据")
-            ws.append(["No clustering data available"])
+            ws.append(["暂无聚类数据"])
             buf = io.BytesIO()
             wb.save(buf)
             return buf.getvalue()
@@ -105,15 +119,26 @@ class XlsxExporter:
             ws.append(headers)
             _style_header_row(ws, len(headers))
 
-            steps = self.db.execute(
-                "SELECT ts.operation, ts.case_id, tc.title, ts.step_no "
-                "FROM cluster_results cr "
-                "JOIN test_steps ts ON cr.step_id = ts.id "
-                "JOIN test_cases tc ON ts.case_id = tc.id "
-                "WHERE cr.cluster_id = ? "
-                "ORDER BY ts.case_id, ts.step_no",
-                (cid,)
-            ).fetchall()
+            if self.history_id is not None:
+                steps = self.db.execute(
+                    "SELECT ts.operation, ts.case_id, tc.title, ts.step_no "
+                    "FROM cluster_results cr "
+                    "JOIN test_steps ts ON cr.step_id = ts.id "
+                    "JOIN test_cases tc ON ts.case_id = tc.id "
+                    "WHERE cr.cluster_id = ? AND cr.history_id = ? "
+                    "ORDER BY ts.case_id, ts.step_no",
+                    (cid, self.history_id)
+                ).fetchall()
+            else:
+                steps = self.db.execute(
+                    "SELECT ts.operation, ts.case_id, tc.title, ts.step_no "
+                    "FROM cluster_results cr "
+                    "JOIN test_steps ts ON cr.step_id = ts.id "
+                    "JOIN test_cases tc ON ts.case_id = tc.id "
+                    "WHERE cr.cluster_id = ? "
+                    "ORDER BY ts.case_id, ts.step_no",
+                    (cid,)
+                ).fetchall()
 
             for s in steps:
                 ws.append([s['operation'], s['case_id'], s['title'], s['step_no']])
@@ -134,20 +159,31 @@ class XlsxExporter:
         ws.append(headers)
         _style_header_row(ws, len(headers))
 
-        rows = self.db.execute(
-            "SELECT tc.id as case_id, tc.title, ts.step_no, ts.operation, "
-            "cr.cluster_id, cr.cluster_label "
-            "FROM test_steps ts "
-            "JOIN test_cases tc ON ts.case_id = tc.id "
-            "LEFT JOIN cluster_results cr ON ts.id = cr.step_id "
-            "ORDER BY tc.id, ts.step_no"
-        ).fetchall()
+        if self.history_id is not None:
+            rows = self.db.execute(
+                "SELECT tc.id as case_id, tc.title, ts.step_no, ts.operation, "
+                "cr.cluster_id, cr.cluster_label "
+                "FROM test_steps ts "
+                "JOIN test_cases tc ON ts.case_id = tc.id "
+                "LEFT JOIN cluster_results cr ON ts.id = cr.step_id AND cr.history_id = ? "
+                "ORDER BY tc.id, ts.step_no",
+                (self.history_id,)
+            ).fetchall()
+        else:
+            rows = self.db.execute(
+                "SELECT tc.id as case_id, tc.title, ts.step_no, ts.operation, "
+                "cr.cluster_id, cr.cluster_label "
+                "FROM test_steps ts "
+                "JOIN test_cases tc ON ts.case_id = tc.id "
+                "LEFT JOIN cluster_results cr ON ts.id = cr.step_id "
+                "ORDER BY tc.id, ts.step_no"
+            ).fetchall()
 
         for r in rows:
             cluster_id = r['cluster_id'] if r['cluster_id'] is not None and r['cluster_id'] >= 0 else ""
             cluster_label = r['cluster_label'] or ""
             if r['cluster_id'] is not None and r['cluster_id'] < 0:
-                cluster_label = "(independent)"
+                cluster_label = "(独立步骤)"
 
             ws.append([
                 r['case_id'], r['title'], r['step_no'],

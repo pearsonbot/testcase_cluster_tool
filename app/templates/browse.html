@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}数据浏览 - 测试用例步骤聚类分析工具{% endblock %}
+
+{% block content %}
+<!-- Statistics Bar -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="row text-center" id="browse-stats">
+            <div class="col"><strong id="stat-cases">-</strong><br><small class="text-muted">用例总数</small></div>
+            <div class="col"><strong id="stat-steps">-</strong><br><small class="text-muted">步骤总数</small></div>
+            <div class="col"><strong id="stat-sources">-</strong><br><small class="text-muted">来源文件</small></div>
+            <div class="col"><strong id="stat-last-import">-</strong><br><small class="text-muted">最近导入</small></div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <label class="form-label mb-0">来源文件:</label>
+            </div>
+            <div class="col-auto">
+                <select id="filter-source" class="form-select form-select-sm" onchange="loadBrowseData(1)">
+                    <option value="">全部</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label mb-0">关键词:</label>
+            </div>
+            <div class="col-md-3">
+                <input type="text" id="filter-keyword" class="form-control form-control-sm"
+                       placeholder="标题关键词..."
+                       onkeydown="if(event.key==='Enter') loadBrowseData(1)">
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-sm btn-primary" onclick="loadBrowseData(1)">
+                    <i class="bi bi-funnel"></i> 筛选
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="card mb-3">
+    <div class="card-header">
+        <i class="bi bi-table"></i> 数据浏览
+        <button id="btn-browse-batch-delete" class="btn btn-sm btn-outline-danger float-end d-none" onclick="browseBatchDelete()">
+            <i class="bi bi-trash"></i> 批量删除选中
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm" id="browse-table">
+                <thead>
+                    <tr>
+                        <th style="width:40px"><input type="checkbox" id="browse-select-all" onchange="browseToggleSelectAll(this)"></th>
+                        <th class="sortable" data-sort="id" onclick="toggleSort('id')">标识 <i class="bi bi-arrow-down-up"></i></th>
+                        <th class="sortable" data-sort="title" onclick="toggleSort('title')">标题 <i class="bi bi-arrow-down-up"></i></th>
+                        <th class="sortable" data-sort="step_count" onclick="toggleSort('step_count')">步骤数 <i class="bi bi-arrow-down-up"></i></th>
+                        <th class="sortable" data-sort="source_file" onclick="toggleSort('source_file')">来源文件 <i class="bi bi-arrow-down-up"></i></th>
+                        <th class="sortable" data-sort="import_time" onclick="toggleSort('import_time')">导入时间 <i class="bi bi-arrow-down-up"></i></th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="browse-body">
+                </tbody>
+            </table>
+        </div>
+        <div id="browse-empty" class="text-center text-muted py-4 d-none">
+            暂无数据，请先导入测试用例。
+        </div>
+        <!-- Pagination -->
+        <div id="browse-pagination" class="d-flex justify-content-between align-items-center mt-3 d-none">
+            <span id="browse-page-info" class="text-muted"></span>
+            <nav>
+                <ul class="pagination pagination-sm mb-0" id="browse-page-buttons"></ul>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/browse.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        loadBrowseStats();
+        loadSourceFilters();
+        loadBrowseData(1);
+    });
+</script>
+{% endblock %}

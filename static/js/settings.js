@@ -9,12 +9,10 @@ async function loadSettings() {
         const data = await apiFetch('/api/settings/');
         const s = data.settings;
 
-        // Set radio button
         const modelType = s.model_type || 'builtin';
         const radio = document.getElementById(`model-${modelType}`);
         if (radio) radio.checked = true;
 
-        // Set input fields
         document.getElementById('model-path').value = s.model_path || '';
         document.getElementById('api-url').value = s.api_url || '';
         document.getElementById('api-key').value = s.api_key || '';
@@ -22,7 +20,7 @@ async function loadSettings() {
 
         toggleModelFields();
     } catch (e) {
-        showAlert('Failed to load settings: ' + e.message);
+        showAlert('加载设置失败: ' + e.message);
     }
 }
 
@@ -42,9 +40,9 @@ async function saveSettings() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(settings)
         });
-        showAlert('Settings saved successfully!', 'success');
+        showAlert('设置保存成功', 'success');
     } catch (e) {
-        showAlert('Failed to save settings: ' + e.message);
+        showAlert('保存设置失败: ' + e.message);
     }
 }
 
@@ -59,7 +57,7 @@ async function testModel() {
     };
 
     const resultEl = document.getElementById('test-result');
-    resultEl.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Testing...';
+    resultEl.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> 测试中...';
     resultEl.className = 'mt-3 alert alert-info';
 
     try {
@@ -68,11 +66,11 @@ async function testModel() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(settings)
         });
-        resultEl.innerHTML = `<i class="bi bi-check-circle"></i> Model test successful! ` +
-            `Model: ${data.model_name}, Dimension: ${data.dimension}`;
+        resultEl.innerHTML = `<i class="bi bi-check-circle"></i> 模型测试成功！ ` +
+            `模型: ${data.model_name}, 向量维度: ${data.dimension}`;
         resultEl.className = 'mt-3 alert alert-success';
     } catch (e) {
-        resultEl.innerHTML = `<i class="bi bi-x-circle"></i> Model test failed: ${e.message}`;
+        resultEl.innerHTML = `<i class="bi bi-x-circle"></i> 模型测试失败: ${e.message}`;
         resultEl.className = 'mt-3 alert alert-danger';
     }
 }

@@ -5,27 +5,103 @@ async function loadImportStatus() {
         const data = await apiFetch('/api/import/status');
         const el = document.getElementById('import-status');
         if (data.case_count > 0) {
-            el.innerHTML = `<span class="badge bg-success">Database: ${data.case_count} cases, ${data.step_count} steps</span>`;
+            el.innerHTML = `<span class="badge bg-success">数据库: ${data.case_count} 条用例, ${data.step_count} 条步骤</span>`;
             if (data.last_import_time) {
-                el.innerHTML += ` <small class="text-muted">Last import: ${data.last_import_time}</small>`;
+                el.innerHTML += ` <small class="text-muted">上次导入: ${data.last_import_time}</small>`;
             }
         } else {
-            el.innerHTML = '<span class="badge bg-secondary">No data imported yet</span>';
+            el.innerHTML = '<span class="badge bg-secondary">暂无导入数据</span>';
+        }
+        // Update data stats
+        const statsEl = document.getElementById('data-stats');
+        if (statsEl) {
+            if (data.case_count > 0) {
+                statsEl.innerHTML = `<span class="badge bg-info">数据库状态:</span> ${data.case_count} 条用例, ${data.step_count} 条步骤`;
+            } else {
+                statsEl.innerHTML = '<span class="text-muted">数据库为空</span>';
+            }
         }
     } catch (e) {
-        document.getElementById('import-status').textContent = 'Failed to load status';
+        document.getElementById('import-status').textContent = '加载状态失败';
+    }
+}
+
+async function loadSourceFiles() {
+    try {
+        const data = await apiFetch('/api/import/sources');
+        const container = document.getElementById('source-files-container');
+        const section = document.getElementById('source-file-list');
+
+        if (data.sources && data.sources.length > 0) {
+            container.innerHTML = data.sources.map(s =>
+                `<div class="form-check">
+                    <input class="form-check-input source-check" type="checkbox" value="${s.filename}" id="src-${s.filename}">
+                    <label class="form-check-label" for="src-${s.filename}">
+                        ${s.filename} (${s.case_count} 条用例)
+                    </label>
+                </div>`
+            ).join('');
+            section.classList.remove('d-none');
+        } else {
+            section.classList.add('d-none');
+        }
+    } catch (e) {
+        // Ignore
+    }
+}
+
+async function deleteBySource() {
+    const checked = document.querySelectorAll('.source-check:checked');
+    if (checked.length === 0) {
+        showAlert('请先选择要删除的来源文件');
+        return;
+    }
+
+    const filenames = Array.from(checked).map(c => c.value);
+    const msg = `确定要删除以下文件导入的所有数据吗？\n\n${filenames.join('\n')}\n\n此操作不可恢复！`;
+    if (!confirm(msg)) return;
+
+    try {
+        for (const fn of filenames) {
+            await apiFetch(`/api/import/by-source/${encodeURIComponent(fn)}`, { method: 'DELETE' });
+        }
+        showAlert(`已删除 ${filenames.length} 个来源文件的数据`, 'success');
+        loadImportStatus();
+        loadSourceFiles();
+    } catch (e) {
+        showAlert(e.message);
+    }
+}
+
+async function clearAllData() {
+    if (!confirm('确定要清空全部数据吗？\n\n将删除所有用例、步骤及聚类结果。\n此操作不可恢复！')) return;
+    if (!confirm('再次确认：真的要清空全部数据吗？')) return;
+
+    try {
+        await apiFetch('/api/cases/all', { method: 'DELETE' });
+        showAlert('已清空全部数据', 'success');
+        loadImportStatus();
+        loadSourceFiles();
+    } catch (e) {
+        showAlert(e.message);
     }
 }
 
 async function uploadFile() {
     const fileInput = document.getElementById('xlsx-file');
     if (!fileInput.files.length) {
-        showAlert('Please select an xlsx file first');
+        showAlert('请先选择 xlsx 文件');
+        return;
+    }
+
+    const file = fileInput.files[0];
+    if (!file.name.endsWith('.xlsx')) {
+        showAlert('请上传 xlsx 格式文件');
         return;
     }
 
     const formData = new FormData();
-    formData.append('file', fileInput.files[0]);
+    formData.append('file', file);
 
     document.getElementById('btn-upload').disabled = true;
     document.getElementById('import-progress').classList.remove('d-none');
@@ -46,24 +122,23 @@ async function uploadFile() {
 
         // Show column mapping
         const mappingDiv = document.getElementById('mapping-content');
-        let html = '<table class="table table-sm table-bordered"><thead><tr><th>Field</th><th>Mapped Column</th></tr></thead><tbody>';
+        let html = '<table class="table table-sm table-bordered"><thead><tr><th>字段</th><th>映射列</th></tr></thead><tbody>';
 
         const fieldNames = {
-            'id': 'Identifier (标识)',
-            'title': 'Title (标题)',
-            'step_no': 'Step No (TC步骤)',
-            'operation': 'Operation (TC操作)'
+            'id': '标识 (ID)',
+            'title': '标题 (Title)',
+            'step_no': '步骤号 (Step No)',
+            'operation': '操作 (Operation)'
         };
 
         for (const [field, name] of Object.entries(fieldNames)) {
             const colIdx = data.mapping[field];
-            const colName = colIdx !== undefined ? data.headers[colIdx] : '<span class="text-danger">Not Mapped</span>';
+            const colName = colIdx !== undefined ? data.headers[colIdx] : '<span class="text-danger">未映射</span>';
             html += `<tr><td>${name}</td><td>`;
 
             if (data.unmatched.includes(field)) {
-                // Show dropdown for manual mapping
                 html += `<select class="form-select form-select-sm" id="manual-${field}">`;
-                html += '<option value="">-- Select Column --</option>';
+                html += '<option value="">-- 请选择列 --</option>';
                 data.headers.forEach((h, i) => {
                     html += `<option value="${i}">${h}</option>`;
                 });
@@ -77,16 +152,12 @@ async function uploadFile() {
         html += '</tbody></table>';
 
         if (data.extra_columns && Object.keys(data.extra_columns).length > 0) {
-            html += `<small class="text-muted">Extra columns: ${Object.keys(data.extra_columns).join(', ')}</small>`;
+            html += `<small class="text-muted">附加列: ${Object.keys(data.extra_columns).join(', ')}</small>`;
         }
 
         mappingDiv.innerHTML = html;
         document.getElementById('column-mapping').classList.remove('d-none');
         document.getElementById('import-progress').classList.add('d-none');
-
-        if (data.auto_confirmed) {
-            // Auto-confirmed, but still show for review
-        }
 
     } catch (e) {
         showAlert(e.message);
@@ -97,7 +168,6 @@ async function uploadFile() {
 }
 
 async function confirmImport() {
-    // Check for manual mappings
     const mapping = { ...uploadedMapping };
     for (const field of ['id', 'title', 'step_no', 'operation']) {
         const select = document.getElementById(`manual-${field}`);
@@ -106,10 +176,9 @@ async function confirmImport() {
         }
     }
 
-    // Validate all required fields are mapped
     for (const field of ['id', 'title', 'step_no', 'operation']) {
         if (mapping[field] === undefined || mapping[field] === null) {
-            showAlert(`Field "${field}" is not mapped. Please select a column.`);
+            showAlert(`字段"${field}"未映射，请选择对应列。`);
             return;
         }
     }
@@ -125,11 +194,11 @@ async function confirmImport() {
         });
 
         let resultHtml = `<div class="alert alert-success">
-            Successfully imported ${data.cases_imported} cases with ${data.steps_imported} steps.
+            成功导入 ${data.cases_imported} 条用例, ${data.steps_imported} 条步骤。
         </div>`;
 
         if (data.warnings && data.warnings.length > 0) {
-            resultHtml += '<div class="alert alert-warning"><strong>Warnings:</strong><ul>';
+            resultHtml += '<div class="alert alert-warning"><strong>警告:</strong><ul>';
             data.warnings.forEach(w => { resultHtml += `<li>${w}</li>`; });
             resultHtml += '</ul></div>';
         }
@@ -140,6 +209,7 @@ async function confirmImport() {
 
         loadImportStatus();
         loadExtraColumns();
+        loadSourceFiles();
 
     } catch (e) {
         showAlert(e.message);

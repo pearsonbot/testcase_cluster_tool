@@ -16,12 +16,24 @@ def export_results():
     """Export clustering results as a zip containing xlsx files."""
     db = get_db()
 
-    cluster_count = db.execute("SELECT COUNT(*) as cnt FROM cluster_info").fetchone()['cnt']
+    # Find current active history
+    current_history = db.execute(
+        "SELECT id FROM cluster_history WHERE is_current = 1 ORDER BY id DESC LIMIT 1"
+    ).fetchone()
+    history_id = current_history['id'] if current_history else None
+
+    if history_id is not None:
+        cluster_count = db.execute(
+            "SELECT COUNT(*) as cnt FROM cluster_info WHERE history_id = ?", (history_id,)
+        ).fetchone()['cnt']
+    else:
+        cluster_count = db.execute("SELECT COUNT(*) as cnt FROM cluster_info").fetchone()['cnt']
+
     if cluster_count == 0:
-        return jsonify({"success": False, "error": "No clustering results to export. Please run clustering first."}), 400
+        return jsonify({"success": False, "error": "暂无聚类结果可导出，请先执行聚类分析"}), 400
 
     try:
-        exporter = XlsxExporter(db)
+        exporter = XlsxExporter(db, history_id=history_id)
         zip_buffer = io.BytesIO()
 
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
@@ -35,7 +47,7 @@ def export_results():
             zf.writestr("用例聚类视图.xlsx", case_view_bytes)
 
         zip_buffer.seek(0)
-        logger.info("Export completed successfully")
+        logger.info("Export completed successfully (history_id=%s)", history_id)
 
         return send_file(
             zip_buffer,
@@ -46,4 +58,4 @@ def export_results():
 
     except Exception as e:
         logger.error("Export failed: %s", e, exc_info=True)
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": f"导出失败: {e}"}), 500

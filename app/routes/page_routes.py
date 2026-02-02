@@ -21,3 +21,13 @@ def clusters():
 @bp.route('/clusters/<int:cluster_id>')
 def cluster_detail(cluster_id):
     return render_template('cluster_detail.html', cluster_id=cluster_id)
+
+
+@bp.route('/browse')
+def browse():
+    return render_template('browse.html')
+
+
+@bp.route('/history')
+def history():
+    return render_template('history.html')

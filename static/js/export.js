@@ -11,7 +11,6 @@ async function exportResults() {
             throw new Error(data.error || `HTTP ${resp.status}`);
         }
 
-        // Download the zip
         const blob = await resp.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -22,7 +21,7 @@ async function exportResults() {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
 
-        showAlert('Export completed successfully!', 'success');
+        showAlert('导出成功', 'success');
     } catch (e) {
         showAlert(e.message);
     }
